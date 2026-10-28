@@ -1,12 +1,25 @@
+mod buffer;
+mod metrics;
 mod engine;
-use engine::ComputeEngine;
+mod pipeline;
+
+use pipeline::CorePipeline;
 
 fn main() {
-    let mut engine = ComputeEngine::new(4);
-    let output = engine.execute("initialize_system");
-    println!("{}", output);
+    let mut pipeline = CorePipeline::new(4);
 
-    let (workers, tasks) = engine.status();
-    println!("Status -> Workers: {}, Tasks Completed: {}", workers, tasks);
+    pipeline.enqueue_task("init_data_structures");
+    pipeline.enqueue_task("warm_up_cache");
+    pipeline.enqueue_task("execute_batch_job");
+
+    let results = pipeline.run_all();
+    for res in &results {
+        println!("{}", res);
+    }
+
+    let (workers, tasks, success_rate) = pipeline.engine_status();
+    println!(
+        "System Core Running -> Workers: {}, Tasks Completed: {}, Success Rate: {:.1}%",
+        workers, tasks, success_rate
+    );
 }
-
