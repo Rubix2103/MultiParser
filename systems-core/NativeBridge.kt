@@ -1,6 +1,12 @@
 package com.example.systems
 
-class NativeBridge {
+import com.example.shared.NotificationHandler
+import com.example.shared.AuditLogger
+
+class NativeBridge(
+    private val notificationHandler: NotificationHandler = NotificationHandler(),
+    private val auditLogger: AuditLogger = AuditLogger()
+) {
     companion object {
         init {
             // Load Rust native library if present
@@ -15,11 +21,13 @@ class NativeBridge {
     external fun nativeExecute(payload: String): String
 
     fun safeExecute(payload: String): String {
+        auditLogger.log("req-" + System.currentTimeMillis(), "NATIVE_EXEC", "NativeBridge")
         return try {
             nativeExecute(payload)
         } catch (e: UnsatisfiedLinkError) {
-            "Fallback Execution: $payload"
+            val fallback = "Fallback Execution: $payload"
+            notificationHandler.sendNotification("ops@system.local", "Native library missing, used fallback")
+            fallback
         }
     }
 }
-
